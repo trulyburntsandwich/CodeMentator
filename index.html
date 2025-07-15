@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CodeMentator</title>
+    <link rel="stylesheet" href="styles.css"/>
+  </head>
+  <body>
+    <div class="app-container">
+      <div class="sidebar">
+        <button
+          class="sidebar-button active"
+          onclick="showSection('commenter')"
+        >
+          Code Commenter
+        </button>
+        <button class="sidebar-button" onclick="showSection('generator')">
+          Code Generator
+        </button>
+      </div>
+
+      <div class="main-content">
+        <div class="header">
+          <h1>CodeMentator</h1>
+          <button class="menu-icon">⋮</button>
+        </div>
+
+        <div class="content-area">
+          <div id="commenter-section">
+            <div class="welcome-section">
+              <h2>Code Commenter</h2>
+              <p>
+                Automatically generate meaningful comments and documentation for
+                your code. Improve code readability and maintainability with
+                intelligent commenting.
+              </p>
+              <div class="feature-grid">
+                <div class="feature-card">
+                  <h3>Smart Comments</h3>
+                  <p>
+                    Generate contextual comments that explain complex logic and
+                    function purposes.
+                  </p>
+                </div>
+                <div class="feature-card">
+                  <h3>Documentation Generation</h3>
+                  <p>
+                    Create comprehensive documentation for functions, classes,
+                    and modules automatically.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div class="input-section">
+              <h3>Enter Your Code</h3>
+              <textarea
+                class="code-input"
+                id="commenter-input"
+                placeholder="Paste your code here to generate intelligent comments and documentation..."
+              ></textarea>
+              <div class="checkbox-wrapper-4">
+                <input class="inp-cbx" id="insult" type="checkbox"/>
+                <label class="cbx" for="insult"><span>
+                <svg width="12px" height="10px">
+                  <use xlink:href="#check-4"></use>
+                </svg></span><span>Insult my code</span></label>
+                <svg class="inline-svg">
+                  <symbol id="check-4" viewbox="0 0 12 10">
+                    <polyline points="1.5 6 4.5 9 10.5 1"></polyline>
+                  </symbol>
+                </svg>
+              </div>
+              <button class="submit-button" onclick="processCode('commenter');">
+                Generate Comments
+              </button>
+              <div class="results-section" id="commenter-results">
+                <h4>Generated Comments:</h4>
+                <div class="results-content" id="commenter-content"></div>
+              </div>
+            </div>
+          </div>
+
+          <div id="generator-section" style="display: none">
+            <div class="welcome-section">
+              <h2>Code Generator</h2>
+              <p>
+                Generate high-quality code snippets, functions, and complete
+                programs based on your requirements. Supports multiple
+                programming languages and frameworks.
+              </p>
+              <div class="feature-grid">
+                <div class="feature-card">
+                  <h3>Multi-Language Support</h3>
+                  <p>
+                    Generate code in Python, JavaScript, Java, C++, and more
+                    programming languages.
+                  </p>
+                </div>
+                <div class="feature-card">
+                  <h3>Framework Integration</h3>
+                  <p>
+                    Create code for popular frameworks like React, Django,
+                    Flask, and Spring Boot.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div class="input-section">
+              <h3>Describe What You Want to Generate</h3>
+              <textarea
+                class="code-input"
+                id="generator-input"
+                placeholder="Describe the code you want to generate (e.g., 'Create a Python function to sort a list of dictionaries by a specific key')..."
+              ></textarea>
+              <button class="submit-button" onclick="processCode('generator');">
+                Generate Code
+              </button>
+              <div class="results-section" id="generator-results">
+                <h4>Generated Code:</h4>
+                <div class="results-content" id="generator-content"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+</html>
+
+<script src="https://js.puter.com/v2/"></script>
+<script>
+
+    function showSection(sectionName) {
+            const sections = ['commenter', 'generator'];
+            sections.forEach(section => {
+            const element = document.getElementById(section + '-section');
+            if (element) {
+                element.style.display = 'none';
+            }
+            });
+
+            const selectedSection = document.getElementById(sectionName + '-section');
+            if (selectedSection) {
+            selectedSection.style.display = 'block';
+            }
+
+            const buttons = document.querySelectorAll('.sidebar-button');
+            buttons.forEach(button => {
+            button.classList.remove('active');
+            });
+            event.target.classList.add('active');
+        }
+
+    async function processCode(tool){
+      const input = document.getElementById(`${tool}-input`).value
+      const resultsSection = document.getElementById(`${tool}-results`);
+      const resultsContent = document.getElementById(`${tool}-content`);
+      const button = event.target;
+
+      if (!input) {
+          alert('Please enter some code or description first!');
+          return;
+        }
+
+      button.disabled = true;
+      button.textContent = 'Processing...';
+      resultsSection.classList.add('show');
+      resultsContent.textContent = 'Analyzing your code with AI...';
+      
+      try {
+          let prompt;
+
+          if (tool === 'commenter' && document.getElementById("insult").checked) {
+            prompt = generatePrompt("insult", input);
+          } else {
+            prompt = generatePrompt(tool, input);
+          }
+          
+          const response = await generateResponse(prompt);
+          resultsContent.textContent = response;
+        } catch (error) {
+          console.error('Error:', error);
+          resultsContent.textContent = "Error: The server had an error while processing your request";
+        } finally {
+          button.disabled = false;
+          if (tool === "commenter") {
+            button.textContent = "Generate Comments";
+          }
+          if (tool === "generator") {
+            button.textContent = "Generate Code";
+          }
+      }
+    }
+
+    function generatePrompt(tool, input){
+      const prompts = {
+        "commenter": `Add inline comments to the some of the lines of the following code while preserving the structure of the original code and leaving all of the original content inside the response: ${input}. Only add comments to the code, do not generate anything that isn't a comment. If the code isn't something you recognise as code, ONLY respond with "Please enter a suitable piece of code." No formatting`,
+        "generator": `Generate a snippet of code that ${input} Do not include any explanations, just generate the code snippet only. If you need more details on what to generate, ask. No formatting`,
+        "insult": `Say some mean insults to the following code: ${input}. Just the insults, no formatting.`
+      }
+
+      return prompts[tool]
+    }
+
+    function generateResponse(prompt){
+      const response = puter.ai.chat(prompt, {model: 'google/gemini-2.0-flash-lite-001'})
+      return response
+    }
+
+</script>
